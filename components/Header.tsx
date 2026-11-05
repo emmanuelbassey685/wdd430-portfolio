@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import NavLinks from "./NavLinks";
 
 export default function Header() {
   return (
@@ -9,15 +10,8 @@ export default function Header() {
           My Portfolio
         </Link>
 
-        <div className="flex gap-6">
-          <Link href="/" className="hover:text-blue-300">
-            Home
-          </Link>
-
-          <Link href="/about" className="hover:text-blue-300">
-            About
-          </Link>
-        </div>
+      <NavLinks />
+       
       </nav>
     </header>
   );
