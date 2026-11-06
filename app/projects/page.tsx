@@ -1,15 +1,7 @@
-import type { Project } from "@/lib/projects-db";
+import { getProjects } from "@/lib/projects-db";
 
-export default async function ProjectsPage() {
-  const response = await fetch("http://localhost:3000/api/projects", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch projects");
-  }
-
-  const projects: Project[] = await response.json();
+export default function ProjectsPage() {
+  const projects = getProjects();
 
   return (
     <section className="mx-auto max-w-5xl px-6 py-12">
@@ -24,7 +16,8 @@ export default async function ProjectsPage() {
             <h2 className="text-xl font-semibold">{project.title}</h2>
             <p className="mt-2 text-slate-600">{project.description}</p>
             <p className="mt-2 text-sm text-slate-500">
-              Type: {project.type} · Technologies: {project.technologies.join(", ")}
+              Type: {project.type} · Technologies:{" "}
+              {project.technologies.join(", ")}
             </p>
           </li>
         ))}
