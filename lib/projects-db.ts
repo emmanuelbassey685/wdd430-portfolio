@@ -1,37 +1,106 @@
+import { neon } from "@neondatabase/serverless";
+
+export type ProjectType = "opensource" | "school";
+
 export interface Project {
   id: number;
   title: string;
   description: string;
-  type: "opensource" | "school";
+  type: ProjectType;
   technologies: string[];
   link?: string;
 }
 
-export const projects: Project[] = [
-  {
-    id: 1,
-    title: "My First Open Source Contribution",
-    description: "A bug fix contributed to a popular library.",
-    type: "opensource",
-    technologies: ["TypeScript", "React"],
-    link: "https://github.com/example/repo",
-  },
-  {
-    id: 2,
-    title: "Database Design Final Project",
-    description: "An ER diagram and normalized schema for a library system.",
-    type: "school",
-    technologies: ["PostgreSQL", "SQL"],
-  },
-];
-
-export function getProjects(type?: string | null): Project[] {
-  if (type) {
-    return projects.filter((project) => project.type === type);
-  }
-  return projects;
+interface ProjectRow extends Omit<Project, "link"> {
+  link: string | null;
 }
 
-export function getProjectById(id: number): Project | null {
-  return projects.find((project) => project.id === id) ?? null;
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((item: unknown) => typeof item === "string")
+  );
+}
+
+function parseProjectRow(row: Record<string, unknown>): ProjectRow {
+  const { id, title, description, type, technologies, link } = row;
+
+  if (
+    typeof id !== "number" ||
+    !Number.isInteger(id) ||
+    typeof title !== "string" ||
+    typeof description !== "string" ||
+    (type !== "opensource" && type !== "school") ||
+    !isStringArray(technologies) ||
+    (link !== null && typeof link !== "string")
+  ) {
+    throw new Error("The projects table returned a row with an invalid shape.");
+  }
+
+  return {
+    id,
+    title,
+    description,
+    type,
+    technologies,
+    link,
+  };
+}
+
+function parseProjectRows(rows: Record<string, unknown>[]): ProjectRow[] {
+  return rows.map(parseProjectRow);
+}
+
+function getSql() {
+  const connectionString =
+    process.env.PORTFOLIO_DATABASE_URL ||
+    process.env.PORTFOLIO_POSTGRES_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    throw new Error(
+      "Database connection is not configured. Set PORTFOLIO_DATABASE_URL, POSTGRES_URL, or DATABASE_URL.",
+    );
+  }
+
+  return neon(connectionString);
+}
+
+function toProject(row: ProjectRow): Project {
+  const { link, ...project } = row;
+  return link ? { ...project, link } : project;
+}
+
+export async function getProjects(
+  type?: string | null,
+): Promise<Project[]> {
+  const sql = getSql();
+  const rows = type
+    ? await sql`
+        SELECT id, title, description, type, technologies, link
+        FROM projects
+        WHERE type = ${type}
+        ORDER BY id
+      `
+    : await sql`
+        SELECT id, title, description, type, technologies, link
+        FROM projects
+        ORDER BY id
+      `;
+
+  return parseProjectRows(rows).map(toProject);
+}
+
+export async function getProjectById(id: number): Promise<Project | null> {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT id, title, description, type, technologies, link
+    FROM projects
+    WHERE id = ${id}
+    LIMIT 1
+  `;
+
+  const project = parseProjectRows(rows)[0];
+  return project ? toProject(project) : null;
 }
