@@ -51,7 +51,7 @@ function parseProjectRows(rows: Record<string, unknown>[]): ProjectRow[] {
   return rows.map(parseProjectRow);
 }
 
-function getSql() {
+export function getSql() {
   const connectionString =
     process.env.PORTFOLIO_DATABASE_URL ||
     process.env.PORTFOLIO_POSTGRES_URL ||
@@ -103,4 +103,59 @@ export async function getProjectById(id: number): Promise<Project | null> {
 
   const project = parseProjectRows(rows)[0];
   return project ? toProject(project) : null;
+}
+
+export const PROJECTS_PER_PAGE = 6;
+
+function normalizeSearchQuery(query: string): string {
+  return query.trim().slice(0, 100).replace(/[\\%_]/g, "\\$&");
+}
+
+export async function fetchFilteredProjects(
+  query: string,
+  currentPage: number,
+): Promise<Project[]> {
+  const sql = getSql();
+  const safeQuery = normalizeSearchQuery(query);
+  const page = Number.isInteger(currentPage) && currentPage > 0 ? currentPage : 1;
+  const offset = (page - 1) * PROJECTS_PER_PAGE;
+  const rows = safeQuery
+    ? await sql`
+        SELECT id, title, description, type, technologies, link
+        FROM projects
+        WHERE title ILIKE ${`%${safeQuery}%`}
+          OR description ILIKE ${`%${safeQuery}%`}
+          OR array_to_string(technologies, ' ') ILIKE ${`%${safeQuery}%`}
+        ORDER BY id
+        LIMIT ${PROJECTS_PER_PAGE} OFFSET ${offset}
+      `
+    : await sql`
+        SELECT id, title, description, type, technologies, link
+        FROM projects
+        ORDER BY id
+        LIMIT ${PROJECTS_PER_PAGE} OFFSET ${offset}
+      `;
+
+  return parseProjectRows(rows).map(toProject);
+}
+
+export async function fetchProjectsPages(query: string): Promise<number> {
+  const sql = getSql();
+  const safeQuery = normalizeSearchQuery(query);
+  const rows = safeQuery
+    ? await sql`
+        SELECT COUNT(*)::int AS count
+        FROM projects
+        WHERE title ILIKE ${`%${safeQuery}%`}
+          OR description ILIKE ${`%${safeQuery}%`}
+          OR array_to_string(technologies, ' ') ILIKE ${`%${safeQuery}%`}
+      `
+    : await sql`SELECT COUNT(*)::int AS count FROM projects`;
+  const count: unknown = rows[0]?.count;
+
+  if (typeof count !== "number" || !Number.isInteger(count) || count < 0) {
+    throw new Error("The projects count query returned an invalid result.");
+  }
+
+  return Math.ceil(count / PROJECTS_PER_PAGE);
 }

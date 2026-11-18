@@ -1,23 +1,14 @@
+import { Suspense } from "react";
+import { connection } from "next/server";
+import ProjectList from "@/components/ProjectList";
+import { getProjects } from "@/lib/projects-db";
 
-import ProjectList from "../components/ProjectList";
-import type { Project } from "../components/ProjectList";
+async function LatestProjects() {
+  await connection();
+  const projects = await getProjects();
 
-const projects: Project[] = [
-  {
-    title: "Kizuna Rail",
-    description:
-      "A railway booking application that allows users to explore train services and manage travel bookings.",
-    technologies: ["JavaScript", "Node.js", "Express", "EJS", "MongoDB"],
-    link: "https://github.com/24on7store/cse341-team7-project",
-  },
-  {
-    title: "Ocean Wave Development",
-    description:
-      "A corporate website presenting marine, offshore, engineering, procurement, and project management services.",
-    technologies: ["HTML", "CSS", "JavaScript", "Vite"],
-    link: "https://github.com/emmanuelbassey685/Ocean-Wave-Development-Company-Nigeria-Limited",
-  },
-];
+  return <ProjectList projects={projects} />;
+}
 
 export default function Home() {
   return (
@@ -33,23 +24,29 @@ export default function Home() {
 
         <p className="mx-auto max-w-2xl text-lg leading-8 text-slate-600">
           I am an aspiring full-stack web developer passionate about building
-          functional, responsive, and user-friendly web applications.
-          I enjoy learning new technologies and turning ideas into practical
-          digital solutions.
+          functional, responsive, and user-friendly web applications. I enjoy
+          learning new technologies and turning ideas into practical digital
+          solutions.
         </p>
       </section>
 
       <section>
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900">
-            My Projects
-          </h2>
+          <h2 className="text-3xl font-bold text-slate-900">My Projects</h2>
           <p className="mt-2 text-slate-600">
             Here are some of the projects I have worked on.
           </p>
         </div>
 
-        <ProjectList projects={projects} />
+        <Suspense
+          fallback={
+            <p className="text-slate-600" role="status">
+              Loading latest projects…
+            </p>
+          }
+        >
+          <LatestProjects />
+        </Suspense>
       </section>
     </div>
   );
