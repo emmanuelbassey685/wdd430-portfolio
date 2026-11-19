@@ -18,7 +18,7 @@ export default function ProjectsLayout({
           Open Source
         </Link>
         <Link href="/projects/school" className="hover:text-indigo-600">
-          School
+          School Projects
         </Link>
       </nav>
 
