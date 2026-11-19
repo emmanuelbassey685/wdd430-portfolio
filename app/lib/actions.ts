@@ -66,18 +66,26 @@ export async function createProject(
     .map((technology) => technology.trim())
     .filter(Boolean);
 
-  const sql = getSql();
+  try {
+    const sql = getSql();
 
-  await sql`
-    INSERT INTO projects (title, description, type, technologies, link)
-    VALUES (
-      ${title},
-      ${description},
-      ${type},
-      ${technologyList},
-      ${link || null}
-    )
-  `;
+    await sql`
+      INSERT INTO projects (title, description, type, technologies, link)
+      VALUES (
+        ${title},
+        ${description},
+        ${type},
+        ${technologyList},
+        ${link || null}
+      )
+    `;
+  } catch (error) {
+    console.error("Error creating project:", error);
+
+    return {
+      message: "Failed to create project. Please try again later.",
+    };
+  }
 
   revalidatePath("/projects");
   revalidatePath("/projects/opensource");
@@ -117,6 +125,9 @@ export async function updateProject(
     .map((technology) => technology.trim())
     .filter(Boolean);
 
+  let updatedCount = 0;
+
+try {
   const sql = getSql();
 
   const updated = await sql`
@@ -131,7 +142,15 @@ export async function updateProject(
     RETURNING id
   `;
 
-  if (updated.length === 0) {
+  updatedCount = updated.length;
+} catch (error) {
+  console.error("Error updating project:", error);
+  throw new Error(
+    "Failed to update project. Please try again later.",
+  );
+}
+
+  if (updatedCount === 0) {
     throw new Error("Project not found.");
   }
 
@@ -155,15 +174,27 @@ export async function deleteProject(
     throw new Error("Invalid project ID.");
   }
 
-  const sql = getSql();
+  let deletedCount = 0;
 
-  const deleted = await sql`
-    DELETE FROM projects
-    WHERE id = ${projectId}
-    RETURNING id
-  `;
+  try {
+    const sql = getSql();
 
-  if (deleted.length === 0) {
+    const deleted = await sql`
+      DELETE FROM projects
+      WHERE id = ${projectId}
+      RETURNING id
+    `;
+
+    deletedCount = deleted.length;
+  } catch (error) {
+    console.error("Error deleting project:", error);
+
+    throw new Error(
+      "Failed to delete project. Please try again later.",
+    );
+  }
+
+  if (deletedCount === 0) {
     throw new Error("Project not found.");
   }
 
