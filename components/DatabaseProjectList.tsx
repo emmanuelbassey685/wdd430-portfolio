@@ -7,6 +7,7 @@ import {
   type ProjectType,
 } from "@/lib/projects-db";
 import Pagination from "@/components/Pagination";
+import ProjectActions from "@/components/ProjectActions";
 
 interface DatabaseProjectListProps {
   type?: ProjectType;
@@ -32,16 +33,13 @@ export default async function DatabaseProjectList({
       {projects.map((project) => (
         <li key={project.id} className="rounded-lg bg-white p-5 shadow">
           <h2 className="text-xl font-semibold">{project.title}</h2>
-
           <p className="mt-2 text-slate-600">
             {project.description}
           </p>
-
           <p className="mt-2 text-sm text-slate-500">
             Type: {project.type} · Technologies:{" "}
             {project.technologies.join(", ")}
           </p>
-
           {project.link ? (
             <a
               className="mt-3 inline-block font-medium text-blue-700 underline"
@@ -52,15 +50,14 @@ export default async function DatabaseProjectList({
               View project
             </a>
           ) : null}
+          <ProjectActions projectId={project.id} />
         </li>
       ))}
-
       {projects.length === 0 ? (
-        <li className="rounded-lg bg-white p-5 text-slate-600">
-          No projects found.
+        <li className="rounded-lg border border-dashed border-slate-300 p-5 text-slate-600">
+          No school projects found. Add your first project to get started.
         </li>
       ) : null}
-
       {!type ? (
         <li className="list-none">
           <Pagination

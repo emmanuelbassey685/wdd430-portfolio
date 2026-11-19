@@ -151,9 +151,13 @@ export async function fetchProjectsPages(query: string): Promise<number> {
           OR array_to_string(technologies, ' ') ILIKE ${`%${safeQuery}%`}
       `
     : await sql`SELECT COUNT(*)::int AS count FROM projects`;
-  const count: unknown = rows[0]?.count;
+  const count = rows[0]?.count;
 
-  if (typeof count !== "number" || !Number.isInteger(count) || count < 0) {
+  if (
+    typeof count !== "number" ||
+    !Number.isInteger(count) ||
+    count < 0
+  ) {
     throw new Error("The projects count query returned an invalid result.");
   }
 

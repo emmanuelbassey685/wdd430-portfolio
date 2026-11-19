@@ -1,36 +1,55 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import { getProjects } from "@/lib/projects-db";
+import ProjectActions from "@/components/ProjectActions";
 
 export default async function SchoolProjectList() {
   await connection();
   const projects = await getProjects("school");
 
   return (
-    <ul className="mt-8 space-y-4">
-      {projects.map((project) => (
-        <li key={project.id} className="rounded-lg bg-white p-5 shadow">
-          <h2 className="text-xl font-semibold">{project.title}</h2>
-          <p className="mt-2 text-slate-600">{project.description}</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Technologies: {project.technologies.join(", ")}
-          </p>
-          {project.link ? (
-            <a
-              className="mt-3 inline-block font-medium text-blue-700 underline"
-              href={project.link}
-              target="_blank"
-              rel="noreferrer"
-            >
-              View project
-            </a>
-          ) : null}
-        </li>
-      ))}
-      {projects.length === 0 ? (
-        <li className="rounded-lg border border-dashed border-slate-300 p-5 text-slate-600">
-          No school projects found.
-        </li>
-      ) : null}
-    </ul>
+    <>
+      <div className="mt-6">
+        <Link
+          href="/projects/create"
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
+          Add New Project
+        </Link>
+      </div>
+
+      <ul className="mt-8 space-y-4">
+        {projects.map((project) => (
+          <li key={project.id} className="rounded-lg bg-white p-5 shadow">
+            <h2 className="text-xl font-semibold">{project.title}</h2>
+            <p className="mt-2 text-slate-600">{project.description}</p>
+            <p className="mt-2 text-sm text-slate-500">
+              Technologies: {project.technologies.join(", ")}
+            </p>
+
+            {project.link ? (
+              <a
+                className="mt-3 inline-block font-medium text-blue-700 underline"
+                href={project.link}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View project
+              </a>
+            ) : null}
+
+            <div className="mt-4 flex gap-4">
+              <ProjectActions projectId={project.id} />
+            </div>
+          </li>
+        ))}
+
+        {projects.length === 0 ? (
+          <li className="rounded-lg border border-dashed border-slate-300 p-5 text-slate-600">
+            No school projects found.
+          </li>
+        ) : null}
+      </ul>
+    </>
   );
 }
