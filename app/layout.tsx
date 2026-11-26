@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
@@ -19,7 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-        <Header />
+        <Suspense fallback={<div className="h-16 bg-slate-900" />}>
+          <Header />
+        </Suspense>
 
         <main className="flex-1">{children}</main>
 
